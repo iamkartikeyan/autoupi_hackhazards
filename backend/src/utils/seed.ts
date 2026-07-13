@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
+import { syncUser, syncPool, syncTransaction } from '../services/neo4j.service';
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ async function seed() {
 
   // Create admin user
   const adminId = uuidv4();
-  await supabase.from('users').upsert({
+  const adminData = {
     id: adminId,
     email: 'admin@autoupi.com',
     phone: '+919999999999',
@@ -24,7 +25,9 @@ async function seed() {
     role: 'ADMIN',
     kyc_status: 'VERIFIED',
     wallet_balance: 10000000,
-  }, { onConflict: 'email' });
+  };
+  await supabase.from('users').upsert(adminData, { onConflict: 'email' });
+  await syncUser(adminData);
   console.log('✅ Admin user created: admin@autoupi.com');
 
   // Create demo users
@@ -40,12 +43,14 @@ async function seed() {
   for (const userData of demoUsers) {
     const userId = uuidv4();
     userIds.push(userId);
-    await supabase.from('users').upsert({
+    const u = {
       id: userId,
       ...userData,
       role: 'USER',
       kyc_status: 'VERIFIED',
-    }, { onConflict: 'email' });
+    };
+    await supabase.from('users').upsert(u, { onConflict: 'email' });
+    await syncUser(u);
   }
   console.log('✅ Demo users created');
 
@@ -59,7 +64,10 @@ async function seed() {
   ];
 
   for (const pool of pools) {
-    await supabase.from('liquidity_pools').upsert({ id: uuidv4(), ...pool }, { onConflict: 'currency' });
+    const poolId = uuidv4();
+    const p = { id: poolId, ...pool };
+    await supabase.from('liquidity_pools').upsert(p, { onConflict: 'currency' });
+    await syncPool(p);
   }
   console.log('✅ Liquidity pools created');
 
@@ -86,13 +94,16 @@ async function seed() {
       final_amount: Math.round(amount * 0.04417 * 100) / 100,
       status,
       blockchain_hash: status === 'COMPLETED' ? `0x${Math.random().toString(16).substr(2, 64)}` : null,
-      settlement_time: status === 'COMPLETED' ? (Math.random() * 4 + 6).toFixed(1) : null,
+      settlement_time: status === 'COMPLETED' ? parseFloat((Math.random() * 4 + 6).toFixed(1)) : null,
       created_at: createdAt,
       updated_at: createdAt,
     });
   }
 
   await supabase.from('transactions').insert(transactions);
+  for (const t of transactions) {
+    await syncTransaction(t);
+  }
   console.log('✅ 60 historical transactions created');
 
   console.log(`

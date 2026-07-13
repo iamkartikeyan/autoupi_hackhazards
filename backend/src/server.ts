@@ -2,6 +2,7 @@ import http from 'http';
 import { Server as SocketServer } from 'socket.io';
 import app from './app';
 import { testConnection } from './config/supabase';
+import { testNeo4jConnection } from './config/neo4j';
 import { setSocketServer } from './services/settlement.service';
 import dotenv from 'dotenv';
 
@@ -16,6 +17,9 @@ async function start() {
     console.error('❌ Cannot start server without database connection');
     process.exit(1);
   }
+
+  // Test Neo4j connection (runs in mock mode if not configured)
+  await testNeo4jConnection();
 
   const httpServer = http.createServer(app);
 

@@ -23,6 +23,7 @@ router.post('/transactions/initiate', authMiddleware, transactionController.init
 router.get('/transactions/history', authMiddleware, transactionController.getHistory);
 router.get('/transactions/:id', authMiddleware, transactionController.getTransaction);
 router.get('/rates', transactionController.getRates);
+router.get('/compliance/graph', authMiddleware, transactionController.getComplianceGraph);
 
 // Admin routes (admin only)
 router.get('/admin/stats', authMiddleware, adminMiddleware, adminController.getStats);

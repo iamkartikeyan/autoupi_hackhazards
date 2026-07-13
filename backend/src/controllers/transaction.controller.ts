@@ -44,6 +44,17 @@ export async function getHistory(req: Request, res: Response) {
   }
 }
 
+import * as neo4jService from '../services/neo4j.service';
+
 export async function getRates(req: Request, res: Response) {
   res.json({ success: true, data: EXCHANGE_RATES, timestamp: new Date().toISOString() });
+}
+
+export async function getComplianceGraph(req: Request, res: Response) {
+  try {
+    const graphData = await neo4jService.getGraphData();
+    res.json({ success: true, data: graphData, timestamp: new Date().toISOString() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message, timestamp: new Date().toISOString() });
+  }
 }

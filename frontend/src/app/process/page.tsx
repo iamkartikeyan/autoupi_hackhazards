@@ -7,7 +7,7 @@ import { CheckCircle, Circle, Loader2, Shield, Lock, Database, Rocket, Bell } fr
 import BrandLogo from '@/components/ui/BrandLogo';
 import TokenVisualization from '@/components/features/TokenVisualization';
 
-const STEP_ICONS: Record<string, React.ElementType> = {
+const STEP_ICONS: Record<string, React.ComponentType<any>> = {
   kyc: Shield, aml: Shield, rate_lock: Lock,
   liquidity: Database, settlement: Rocket, notify: Bell,
 };

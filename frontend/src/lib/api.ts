@@ -64,6 +64,11 @@ export const adminApi = {
   rebalancePool: (currency: string, amount: number) => api.post('/admin/pools/rebalance', { currency, amount }),
 };
 
+// Compliance
+export const complianceApi = {
+  getGraph: () => api.get('/compliance/graph'),
+};
+
 // Save auth data
 export function saveAuthData(token: string, user: Record<string, unknown>) {
   Cookies.set('autoupi_token', token, { expires: 7, secure: true, sameSite: 'lax' });

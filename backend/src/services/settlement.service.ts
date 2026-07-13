@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import { SETTLEMENT_STEPS, DEMO_SPEED_MULTIPLIERS, EXCHANGE_RATES, TRANSACTION_FEE_PERCENT } from '../config/constants';
+import { syncTransaction } from './neo4j.service';
 import { v4 as uuidv4 } from 'uuid';
 import { Server as SocketServer } from 'socket.io';
 
@@ -25,7 +26,7 @@ function generateBlockchainHash(): string {
 }
 
 async function emitLog(transactionId: string, step: string, status: string, message: string) {
-  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+  const timestamp = new Date().toISOString().substring(11, 23);
   
   const log = { step, status, message, timestamp, transactionId };
   
@@ -90,6 +91,9 @@ export async function initiateTransaction(
 
   if (error) throw error;
 
+  // Sync to Neo4j
+  syncTransaction(transaction).catch(err => console.error('Error syncing transaction to Neo4j:', err));
+
   // Start processing async (don't await)
   processTransaction(transactionId, userId, amount, fee).catch(console.error);
 
@@ -141,6 +145,12 @@ async function processTransaction(transactionId: string, userId: string, amount:
       settlement_time: settlementTime,
     }).eq('id', transactionId);
 
+    // Fetch and sync updated transaction to Neo4j
+    const { data: updatedTxn } = await supabase.from('transactions').select('*').eq('id', transactionId).single();
+    if (updatedTxn) {
+      syncTransaction(updatedTxn).catch(err => console.error('Error syncing completed txn to Neo4j:', err));
+    }
+
     // Emit completion
     if (io) {
       io.to(`txn_${transactionId}`).emit('txn_complete', {
@@ -155,6 +165,13 @@ async function processTransaction(transactionId: string, userId: string, amount:
   } catch (err) {
     console.error(`❌ Transaction ${transactionId} failed:`, err);
     await supabase.from('transactions').update({ status: 'FAILED' }).eq('id', transactionId);
+
+    // Fetch and sync failed transaction to Neo4j
+    const { data: failedTxn } = await supabase.from('transactions').select('*').eq('id', transactionId).single();
+    if (failedTxn) {
+      syncTransaction(failedTxn).catch(e => console.error('Error syncing failed txn to Neo4j:', e));
+    }
+
     if (io) {
       io.to(`txn_${transactionId}`).emit('txn_failed', { error: 'Settlement failed' });
     }

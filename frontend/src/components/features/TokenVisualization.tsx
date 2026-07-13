@@ -14,7 +14,7 @@ interface TokenStep {
   id: string;
   title: string;
   description: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<any>;
   compliance: string;
   color: string;
   label?: string;

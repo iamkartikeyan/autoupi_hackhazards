@@ -110,7 +110,7 @@ export async function verifyOTPAndLogin(phone: string, email: string, fullName: 
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_EXPIRY || '7d' }
+    { expiresIn: (process.env.JWT_EXPIRY as any) || '7d' }
   );
 
   return { token, user };
