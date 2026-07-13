@@ -1,0 +1,16 @@
+{
+  "name": "autopay-2",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:clean": "npx kill-port 3000 3001 5000 || true",
+    "dev:fresh": "npm run dev:clean && npm run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "kill-port": "^2.0.1",
+    "concurrently": "^9.2.1"
+  }
+}
